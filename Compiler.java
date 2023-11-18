@@ -1,49 +1,17 @@
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 public class Compiler {
-    private static String input;
-    private static int position;
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+    public List<Token> lex(String input, int position) {
 
-        while (true) {
-            System.out.print("Enter a mathematical expression (Q to quit): ");
-            input = scanner.nextLine();
-
-            if (input.equalsIgnoreCase("Q")) {
-                break;
-            }
-
-            position = 0;
-
-            try {
-                List<Token> tokens = lex();
-                System.out.println("Token Analysis:");
-                for (Token token : tokens) {
-                    System.out.println(token);
-                }
-
-                ASTNode root = buildAST();
-                System.out.println("Syntax Analysis Result: " + buildSyntaxAnalysis(root));
-                System.out.println("Abstract Syntax Tree:");
-                printAST(root, 0);
-            } catch (Exception e) {
-                System.out.println("Expression is invalid. " + e.getMessage());
-            }
-        }
-
-        scanner.close();
-    }
-
-    private static List<Token> lex() {
         List<Token> tokens = new ArrayList<>();
         while (position < input.length()) {
             char currentChar = input.charAt(position);
             if (Character.isDigit(currentChar)) {
-                tokens.add(new Token(TokenType.NUMBER, readNumber()));
+                String number = readNumber(input, position);
+                tokens.add(new Token(TokenType.NUMBER, number));
+                position += number.length();
             } else if (isOperator(currentChar)) {
                 tokens.add(new Token(getOperatorType(currentChar), String.valueOf(currentChar)));
                 position++;
@@ -58,7 +26,7 @@ public class Compiler {
                 throw new RuntimeException("Unexpected character: " + currentChar);
             }
         }
-        position = 0;
+        // position = 0;
         return tokens;
     }
 
@@ -81,56 +49,65 @@ public class Compiler {
         }
     }
 
-    private static ASTNode buildAST() {
-        return Expr();
+    public ASTNode buildAST(String input, int position) {
+        return Expr(input, position);
     }
 
-    private static ASTNode Expr() {
-        ASTNode termNode = Term();
-        while (position < input.length() && (peek() == '+' || peek() == '-')) {
-            char operator = peek();
-            position++;
-            ASTNode nextTermNode = Term();
-            termNode = new ASTNode(String.valueOf(operator), termNode, nextTermNode);
+    private static ASTNode Expr(String input, int position) {
+        ASTNode termNode = Term(input, position);
+        for (position = 1; position < input.length(); position++) {
+
+            while (position < input.length() && (peek(input, position) == '+' || peek(input, position) == '-')) {
+                char operator = peek(input, position);
+                position++;
+                ASTNode nextTermNode = Term(input, position);
+                termNode = new ASTNode(String.valueOf(operator), termNode, nextTermNode);
+            }
         }
         return termNode;
     }
 
-    private static ASTNode Term() {
-        ASTNode factorNode = Factor();
+    private static ASTNode Term(String input, int position) {
+        ASTNode factorNode = Factor(input, position);
 
-        while (position < input.length() && (peek() == '*' || peek() == '/')) {
-            char operator = peek();
+        while (position < input.length() && (peek(input, position) == '*' || peek(input, position) == '/')) {
+            char operator = peek(input, position);
+
             position++;
-            ASTNode nextFactorNode = Factor();
+
+            ASTNode nextFactorNode = Factor(input, position);
             factorNode = new ASTNode(String.valueOf(operator), factorNode, nextFactorNode);
         }
+
         return factorNode;
     }
 
-    private static ASTNode Factor() {
-        if (Character.isDigit(peek())) {
-            return Number();
-        } else if (peek() == '(') {
+    private static ASTNode Factor(String input, int position) {
+
+        if (Character.isDigit(peek(input, position))) {
+
+            return Number(input, position);
+        } else if (peek(input, position) == '(') {
             position++;
-            ASTNode expressionNode = Expr();
-            if (peek() == ')') {
+            ASTNode expressionNode = Expr(input, position);
+            if (peek(input, position) == ')') {
                 position++;
                 return expressionNode;
             } else {
                 throw new RuntimeException("Expected closing parenthesis ')'");
             }
         } else {
-            throw new RuntimeException("Unexpected character: " + peek());
+            throw new RuntimeException("Unexpected character: " + peek(input, position));
         }
     }
 
-    private static ASTNode Number() {
-        String value = readNumber();
+    private static ASTNode Number(String input, int position) {
+
+        String value = readNumber(input, position);
         return new ASTNode(value);
     }
 
-    private static String readNumber() {
+    private static String readNumber(String input, int position) {
         StringBuilder number = new StringBuilder();
         while (position < input.length() && Character.isDigit(input.charAt(position))) {
             number.append(input.charAt(position));
@@ -139,7 +116,7 @@ public class Compiler {
         return number.toString();
     }
 
-    private static char peek() {
+    private static char peek(String input, int position) {
         if (position < input.length()) {
             return input.charAt(position);
         } else {
@@ -147,7 +124,7 @@ public class Compiler {
         }
     }
 
-    private static String buildSyntaxAnalysis(ASTNode node) {
+    public String buildSyntaxAnalysis(ASTNode node) {
         StringBuilder result = new StringBuilder();
         buildSyntaxAnalysisRecursive(node, result);
         return result.toString();
@@ -169,7 +146,7 @@ public class Compiler {
         }
     }
 
-    private static void printAST(ASTNode node, int level) {
+    public void printAST(ASTNode node, int level) {
         if (node == null) {
             return;
         }
@@ -183,59 +160,5 @@ public class Compiler {
         for (ASTNode child : node.getChildren()) {
             printAST(child, level + 1);
         }
-    }
-}
-
-enum TokenType {
-    NUMBER,
-    PLUS,
-    MINUS,
-    MULTIPLY,
-    DIVIDE,
-    PAREN
-}
-
-class Token {
-    private final TokenType type;
-    private final String lexeme;
-
-    public Token(TokenType type, String lexeme) {
-        this.type = type;
-        this.lexeme = lexeme;
-    }
-
-    @Override
-    public String toString() {
-        return type + ": " + lexeme;
-    }
-}
-
-class ASTNode {
-    private String value;
-    private List<ASTNode> children;
-
-    public ASTNode(String value) {
-        this.value = value;
-        this.children = new ArrayList<>();
-    }
-
-    public ASTNode(String value, ASTNode left, ASTNode right) {
-        this.value = value;
-        this.children = new ArrayList<>();
-        this.children.add(left);
-        this.children.add(right);
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public List<ASTNode> getChildren() {
-        return children;
-    }
-
-    @Override
-    public String toString() {
-        return (value != null) ? value : " ";
     }
 }
