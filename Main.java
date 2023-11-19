@@ -43,7 +43,7 @@ public class Main {
     private static String buildSyntaxAnalysis(ASTNode node) {
         StringBuilder result = new StringBuilder();
         buildSyntaxAnalysisRecursive(node, result);
-        return result.toString();
+        return result.toString().trim(); // Trim to remove leading/trailing whitespaces
     }
 
     private static void buildSyntaxAnalysisRecursive(ASTNode node, StringBuilder result) {
@@ -52,19 +52,13 @@ public class Main {
         }
 
         if (node.getValue() != null) {
-            result.append(node.getValue());
-        } else {
-            result.append("(");
-            for (ASTNode child : node.getChildren()) {
-                buildSyntaxAnalysisRecursive(child, result);
-            }
-            result.append(")");
+            result.append(node.getValue()).append(" ");
+        }
+
+        for (ASTNode child : node.getChildren()) {
+            buildSyntaxAnalysisRecursive(child, result);
         }
     }
-
-    
-    
-    
 
     private static void printAST(ASTNode node, int level) {
         if (node == null) {

@@ -62,11 +62,4 @@ public class Lexer {
         return number.toString();
     }
 
-    private char peek() {
-        if (position < input.length()) {
-            return input.charAt(position);
-        } else {
-            return '\0'; // Null character if position is at the end of the input
-        }
-    }
 }
