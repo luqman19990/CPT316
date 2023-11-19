@@ -4,35 +4,86 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        Compiler compiler = new Compiler();
-        // ASTNode ast = new ASTNode();
 
+        clearScreen();
         while (true) {
+
             System.out.print("Enter a mathematical expression (Q to quit): ");
             String input = scanner.nextLine();
+            clearScreen();
 
             if (input.equalsIgnoreCase("Q")) {
                 break;
             }
 
-            int position = 0;
+            Lexer lexer = new Lexer(input);
+            Parser parser = new Parser(input);
 
             try {
-                List<Token> tokens = compiler.lex(input, position);
+                List<Token> tokens = lexer.lex();
+                System.out.println("Expression : " + input);
+                System.out.println();
                 System.out.println("Token Analysis:");
                 for (Token token : tokens) {
                     System.out.println(token);
                 }
-                ASTNode root = compiler.buildAST(input, position);
 
-                System.out.println("Syntax Analysis Result: " + compiler.buildSyntaxAnalysis(root));
+                ASTNode root = parser.parse();
+                System.out.println("Syntax Analysis Result: " + buildSyntaxAnalysis(root));
                 System.out.println("Abstract Syntax Tree:");
-                compiler.printAST(root, 0);
+                printAST(root, 0);
             } catch (Exception e) {
                 System.out.println("Expression is invalid. " + e.getMessage());
             }
         }
 
         scanner.close();
+    }
+
+    private static String buildSyntaxAnalysis(ASTNode node) {
+        StringBuilder result = new StringBuilder();
+        buildSyntaxAnalysisRecursive(node, result);
+        return result.toString();
+    }
+
+    private static void buildSyntaxAnalysisRecursive(ASTNode node, StringBuilder result) {
+        if (node == null) {
+            return;
+        }
+
+        if (node.getValue() != null) {
+            result.append(node.getValue());
+        } else {
+            result.append("(");
+            for (ASTNode child : node.getChildren()) {
+                buildSyntaxAnalysisRecursive(child, result);
+            }
+            result.append(")");
+        }
+    }
+
+    
+    
+    
+
+    private static void printAST(ASTNode node, int level) {
+        if (node == null) {
+            return;
+        }
+
+        for (int i = 0; i < level; i++) {
+            System.out.print("  "); // Adjust the spacing for better visualization
+        }
+
+        System.out.println(node);
+
+        for (ASTNode child : node.getChildren()) {
+            printAST(child, level + 1);
+        }
+    }
+
+    private static void clearScreen() {
+        System.out.print("\033[H\033[2J"); // ANSI escape sequence to clear the screen
+        System.out.flush();
     }
 }

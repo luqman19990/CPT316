@@ -2,19 +2,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ASTNode {
-
     private String value;
     private List<ASTNode> children;
 
+    // Default constructor
     public ASTNode() {
-
+        this.value = null;
+        this.children = new ArrayList<>();
     }
 
+    // Constructor with a value parameter
     public ASTNode(String value) {
         this.value = value;
         this.children = new ArrayList<>();
     }
 
+    // Constructor with a value, left, and right parameters
     public ASTNode(String value, ASTNode left, ASTNode right) {
         this.value = value;
         this.children = new ArrayList<>();

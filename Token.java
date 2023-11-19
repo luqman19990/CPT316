@@ -1,13 +1,3 @@
-
-enum TokenType {
-    NUMBER,
-    PLUS,
-    MINUS,
-    MULTIPLY,
-    DIVIDE,
-    PAREN
-}
-
 public class Token {
     private final TokenType type;
     private final String lexeme;
@@ -18,8 +8,17 @@ public class Token {
     }
 
     @Override
-
     public String toString() {
         return type + ": " + lexeme;
     }
+
+}
+
+enum TokenType {
+    NUMBER,
+    PLUS,
+    MINUS,
+    MULTIPLY,
+    DIVIDE,
+    PAREN
 }
